@@ -1,0 +1,10 @@
+services:
+  app:
+    image: node:22-alpine
+    volumes: ["./app:/srv"]
+    command: node /srv/server.mjs
+  proxy:
+    image: nginx:1.27
+    volumes: ["./nginx.conf:/etc/nginx/nginx.conf:ro"]
+    ports: ["8080:80"]
+    depends_on: [app]

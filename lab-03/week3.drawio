@@ -1,0 +1,84 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="week3-flow-final" name="FoodHub request flow">
+    <mxGraphModel dx="1654" dy="1169" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title" value="&lt;b&gt;FoodHub: customer opens the menu page&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=top;fontSize=24;" vertex="1" parent="1">
+          <mxGeometry x="40" y="30" width="900" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="zone" value="Private network (plain HTTP, no TLS)" style="rounded=1;dashed=1;fillColor=#E8F5E9;strokeColor=#2E7D32;strokeWidth=2;verticalAlign=top;align=left;spacingLeft=12;spacingTop=6;fontSize=14;fontColor=#1B5E20;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="970" y="320" width="560" height="270" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="phone" value="&lt;b&gt;Phone / browser&lt;/b&gt;&lt;br&gt;&lt;br&gt;Browser cache: static files (cache-control)" style="rounded=1;fillColor=#E3F2FD;strokeColor=#1565C0;strokeWidth=2;html=1;fontSize=14;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="390" width="220" height="140" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="dns" value="&lt;b&gt;DNS resolver&lt;/b&gt;&lt;br&gt;Caches answers for the TTL" style="rounded=1;fillColor=#FFF3E0;strokeColor=#E65100;strokeWidth=2;html=1;fontSize=14;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="340" y="130" width="220" height="90" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="cdn" value="&lt;b&gt;CDN edge&lt;/b&gt;&lt;br&gt;images: HIT / MISS (Age header)" style="rounded=1;fillColor=#FFF3E0;strokeColor=#E65100;strokeWidth=2;html=1;fontSize=14;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="340" y="700" width="220" height="100" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="proxy" value="&lt;b&gt;Reverse proxy (nginx)&lt;/b&gt;&lt;br&gt;:8080 published&lt;br&gt;adds X-Forwarded-For" style="rounded=1;fillColor=#F3E5F5;strokeColor=#6A1B9A;strokeWidth=2;html=1;fontSize=14;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="680" y="390" width="220" height="140" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="app" value="&lt;b&gt;Backend app&lt;/b&gt;&lt;br&gt;Node :3000" style="rounded=1;fillColor=#F3E5F5;strokeColor=#6A1B9A;strokeWidth=2;html=1;fontSize=14;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="400" width="200" height="120" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="db" value="&lt;b&gt;Database&lt;/b&gt;" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#E0F2F1;strokeColor=#00695C;strokeWidth=2;html=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1330" y="395" width="140" height="130" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e1" value="1. DNS query / IP of foodhub" style="endArrow=classic;startArrow=classic;html=1;strokeWidth=2;fontSize=13;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="phone" target="dns">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e2" value="2. HTTPS (images)" style="endArrow=classic;html=1;strokeWidth=2;fontSize=13;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#C62828;" edge="1" parent="1" source="phone" target="cdn">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e4" value="3. HTTPS (menu page)" style="endArrow=classic;html=1;strokeWidth=2;fontSize=13;edgeStyle=orthogonalEdgeStyle;strokeColor=#C62828;" edge="1" parent="1" source="phone" target="proxy">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e5" value="plain HTTP + X-Forwarded-For" style="endArrow=classic;html=1;strokeWidth=2;fontSize=13;edgeStyle=orthogonalEdgeStyle;strokeColor=#2E7D32;" edge="1" parent="1" source="proxy" target="app">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e6" value="plain, private network" style="endArrow=classic;html=1;strokeWidth=2;fontSize=13;edgeStyle=orthogonalEdgeStyle;strokeColor=#2E7D32;" edge="1" parent="1" source="app" target="db">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="tls1" value="TLS ENDS HERE" style="rounded=1;fillColor=#FFEBEE;strokeColor=#C62828;strokeWidth=2;fontColor=#B71C1C;fontStyle=1;fontSize=13;html=1;" vertex="1" parent="1">
+          <mxGeometry x="350" y="815" width="200" height="34" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="tls2" value="TLS ENDS HERE" style="rounded=1;fillColor=#FFEBEE;strokeColor=#C62828;strokeWidth=2;fontColor=#B71C1C;fontStyle=1;fontSize=13;html=1;" vertex="1" parent="1">
+          <mxGeometry x="690" y="545" width="200" height="34" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="c1" value="1" style="ellipse;fillColor=#FB8C00;strokeColor=#E65100;fontColor=#FFFFFF;fontStyle=1;fontSize=14;html=1;" vertex="1" parent="1">
+          <mxGeometry x="245" y="375" width="32" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="c2" value="2" style="ellipse;fillColor=#FB8C00;strokeColor=#E65100;fontColor=#FFFFFF;fontStyle=1;fontSize=14;html=1;" vertex="1" parent="1">
+          <mxGeometry x="545" y="115" width="32" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="c3" value="3" style="ellipse;fillColor=#FB8C00;strokeColor=#E65100;fontColor=#FFFFFF;fontStyle=1;fontSize=14;html=1;" vertex="1" parent="1">
+          <mxGeometry x="545" y="685" width="32" height="32" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="legend" value="&lt;b&gt;Caching points&lt;/b&gt;&lt;br&gt;1. Browser cache (static files, per cache-control)&lt;br&gt;2. DNS resolver cache (TTL)&lt;br&gt;3. CDN edge cache (HIT/MISS, Age header)&lt;br&gt;&lt;br&gt;&lt;b&gt;TLS&lt;/b&gt;&lt;br&gt;Ends at the CDN edge (images) and at the reverse proxy (menu page).&lt;br&gt;Proxy to backend and database: plain HTTP inside the private network.&lt;br&gt;&lt;br&gt;&lt;b&gt;Arrows&lt;/b&gt;: red = HTTPS, green = plain HTTP" style="rounded=1;fillColor=#FFFFFF;strokeColor=#9E9E9E;align=left;verticalAlign=top;spacing=12;html=1;fontSize=14;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="900" width="800" height="200" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
