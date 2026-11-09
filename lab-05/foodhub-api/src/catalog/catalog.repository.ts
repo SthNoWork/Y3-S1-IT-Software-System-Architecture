@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable } from "@nestjs/common";
 
 export interface Restaurant {
   id: number;
@@ -9,9 +9,9 @@ export interface Restaurant {
 @Injectable()
 export class CatalogRepository {
   private readonly restaurants: Restaurant[] = [
-    { id: 1, name: 'Num Banh Chok Corner', area: 'Daun Penh' },
-    { id: 2, name: 'Lok Lak House', area: 'BKK1' },
-    { id: 3, name: 'Amok Garden', area: 'Toul Kork' },
+    { id: 1, name: "Num Banh Chok Corner", area: "Daun Penh" },
+    { id: 2, name: "Lok Lak House", area: "BKK1" },
+    { id: 3, name: "Amok Garden", area: "Toul Kork" },
   ];
 
   findAll(limit = 20, offset = 0): { data: Restaurant[]; total: number } {
@@ -29,4 +29,3 @@ export class CatalogRepository {
     return this.restaurants.some((r) => r.id === id);
   }
 }
-

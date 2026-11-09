@@ -3,16 +3,16 @@ import {
   Inject,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
-import { CatalogService } from '../catalog/catalog.service.js';
-import { ORDER_REPOSITORY } from './order.repository.js';
-import type { Order, OrderRepository } from './order.repository.js';
+} from "@nestjs/common";
+import { randomUUID } from "node:crypto";
+import { CatalogService } from "../catalog/catalog.service.js";
+import { ORDER_REPOSITORY } from "./order.repository.js";
+import type { Order, OrderRepository } from "./order.repository.js";
 
 const ALLOWED: Record<string, string[]> = {
-  PLACED: ['COOKING', 'CANCELLED'],
-  COOKING: ['DELIVERING'],
-  DELIVERING: ['DELIVERED'],
+  PLACED: ["COOKING", "CANCELLED"],
+  COOKING: ["DELIVERING"],
+  DELIVERING: ["DELIVERED"],
   DELIVERED: [],
   CANCELLED: [],
 };
@@ -40,14 +40,14 @@ export class OrdersService {
     }
 
     if (!this.catalog.restaurantExists(restaurantId)) {
-      throw new NotFoundException('restaurant not found');
+      throw new NotFoundException("restaurant not found");
     }
 
     const order: Order = {
       id: randomUUID(),
       restaurantId,
       items,
-      status: 'PLACED',
+      status: "PLACED",
     };
 
     await this.orders.save(order);
@@ -62,7 +62,7 @@ export class OrdersService {
   async get(id: string): Promise<Order> {
     const order = await this.orders.get(id);
     if (!order) {
-      throw new NotFoundException('order not found');
+      throw new NotFoundException("order not found");
     }
     return order;
   }
@@ -79,4 +79,3 @@ export class OrdersService {
     return order;
   }
 }
-

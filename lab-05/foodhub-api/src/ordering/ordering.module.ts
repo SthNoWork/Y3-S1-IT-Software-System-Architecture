@@ -1,9 +1,9 @@
-import { Module } from '@nestjs/common';
-import { CatalogModule } from '../catalog/catalog.module.js';
-import { InMemoryOrderRepository } from './in-memory-order.repository.js';
-import { ORDER_REPOSITORY } from './order.repository.js';
-import { OrdersController } from './orders.controller.js';
-import { OrdersService } from './orders.service.js';
+import { Module } from "@nestjs/common";
+import { CatalogModule } from "../catalog/catalog.module.js";
+import { InMemoryOrderRepository } from "./in-memory-order.repository.js";
+import { ORDER_REPOSITORY } from "./order.repository.js";
+import { OrdersController } from "./orders.controller.js";
+import { OrdersService } from "./orders.service.js";
 
 @Module({
   imports: [CatalogModule],
@@ -14,4 +14,3 @@ import { OrdersService } from './orders.service.js';
   ],
 })
 export class OrderingModule {}
-
