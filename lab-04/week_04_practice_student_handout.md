@@ -349,11 +349,11 @@ Compare `encode(order).length` with `JSON.stringify(order).length`.
 
 ## Before You Leave: Checklist
 
-- [ ] All endpoints work with appropriate `201`, `200`, `400`, `404`, and `409` status codes.
-- [ ] Idempotency key successfully prevents duplicate orders.
-- [ ] CORS error reproduced in Vue application and resolved.
-- [ ] Cookie flags, `document.cookie`, and server restart questions answered.
-- [ ] API specification table completed in the portfolio; code committed and pushed to team repository.
+- [x] All endpoints work with appropriate `201`, `200`, `400`, `404`, and `409` status codes.
+- [x] Idempotency key successfully prevents duplicate orders.
+- [x] CORS error reproduced in Vue application and resolved.
+- [x] Cookie flags, `document.cookie`, and server restart questions answered.
+- [x] API specification table completed in the portfolio; code committed and pushed to team repository.
 
 ---
 
@@ -363,17 +363,17 @@ Compare `encode(order).length` with `JSON.stringify(order).length`.
 
 | Request | Status Code | Notes |
 | :--- | :--- | :--- |
-| `GET /v1/restaurants?limit=2` | | |
-| `POST /v1/orders` (valid) | | |
-| `POST /v1/orders` (restaurantId "a", items []) | | |
-| `POST /v1/orders`, restaurant 99 | | |
-| `GET /v1/orders/{id}` (exists / missing) | | |
-| `PATCH PLACED → COOKING` | | |
-| `PATCH PLACED → DELIVERED` | | |
-| `POST` with `Idempotency-Key: abc-123` (1st / 2nd) | | |
+| `GET /v1/restaurants?limit=2` | `200 OK` | Returns paginated JSON payload `{ data: [...], limit: 2, offset: 0, total: 3 }` with the first 2 restaurants. |
+| `POST /v1/orders` (valid) | `201 Created` | Successfully creates order with UUID and initial status `PLACED`. |
+| `POST /v1/orders` (restaurantId "a", items []) | `400 Bad Request` | Fails class-validator checks (`restaurantId must be an integer number`, `items should not be empty`). |
+| `POST /v1/orders`, restaurant 99 | `404 Not Found` | Throws `NotFoundException('restaurant not found')` as ID 99 does not exist. |
+| `GET /v1/orders/{id}` (exists / missing) | `200 OK` / `404 Not Found` | Returns order object when UUID exists; returns 404 `NotFoundException('order not found')` when missing. |
+| `PATCH PLACED → COOKING` | `200 OK` | Valid state transition; order status updated from `PLACED` to `COOKING`. |
+| `PATCH PLACED → DELIVERED` | `409 Conflict` | Invalid direct transition; rejected by transition state machine with `ConflictException`. |
+| `POST` with `Idempotency-Key: abc-123` (1st / 2nd) | `201 Created` / `200 OK` | First request creates the order (`201`); second identical request returns cached order (`200`) without duplicating. |
 
 **Why does a mobile app on a bad network need an idempotency key? (one sentence):**
-> 
+> On unreliable networks where requests may succeed on the server but connection drops before receiving the response, an idempotency key allows the mobile app to safely retry without creating duplicate orders or duplicate charges.
 
 ---
 
@@ -381,12 +381,12 @@ Compare `encode(order).length` with `JSON.stringify(order).length`.
 
 | Method | Path | Request Body | Success | Error Codes |
 | :--- | :--- | :--- | :--- | :--- |
-| | | | | |
-| | | | | |
-| | | | | |
-| | | | | |
-| | | | | |
-| | | | | |
+| `GET` | `/v1/restaurants` | None *(Query: `limit`, `offset`)* | `200 OK` | `400 Bad Request` |
+| `POST` | `/v1/orders` | `{"restaurantId": number, "items": string[]}` *(Header: `Idempotency-Key`)* | `201 Created` / `200 OK` (idempotent repeat) | `400 Bad Request`, `404 Not Found` |
+| `GET` | `/v1/orders/:id` | None | `200 OK` | `404 Not Found` |
+| `PATCH` | `/v1/orders/:id` | `{"status": string}` (`PLACED`, `COOKING`, `DELIVERING`, `DELIVERED`, `CANCELLED`) | `200 OK` | `400 Bad Request`, `404 Not Found`, `409 Conflict` |
+| `POST` | `/v1/login` | None *(Query: `username`)* | `201 Created` | `400 Bad Request` |
+| `GET` | `/v1/me` | None *(Cookie: `sid`)* | `200 OK` | `401 Unauthorized` |
 
 ---
 
@@ -394,9 +394,9 @@ Compare `encode(order).length` with `JSON.stringify(order).length`.
 
 | Question | Answer |
 | :--- | :--- |
-| CORS error message in the console | |
-| Why curl works but the browser refuses | |
-| Why `origin: '*'` with credentials is a bad idea | |
+| CORS error message in the console | `Access to fetch at 'http://localhost:3000/v1/restaurants' from origin 'http://localhost:5173' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.` (Browser displays `Blocked: TypeError: Failed to fetch`). |
+| Why curl works but the browser refuses | CORS is a browser security mechanism enforced strictly by user agents under the Same-Origin Policy to safeguard users against unauthorized cross-origin requests; `curl` is a standalone CLI client without a DOM context or SOP enforcement. |
+| Why `origin: '*'` with credentials is a bad idea | Combining `origin: '*'` with `credentials: true` would allow any arbitrary third-party site visited by the user to execute authenticated cross-origin requests and read sensitive personal responses using ambient cookies; browsers and the CORS standard disallow wildcard origins when credentials are enabled. |
 
 ---
 
@@ -404,7 +404,7 @@ Compare `encode(order).length` with `JSON.stringify(order).length`.
 
 | Question | Answer |
 | :--- | :--- |
-| Flags on the `sid` cookie | |
-| Why `document.cookie` does not show `sid` | |
-| What happens after an API restart, and why | |
-| What would happen with 3 API servers behind a load balancer | |
+| Flags on the `sid` cookie | `HttpOnly; SameSite=Lax; Path=/` (and `Secure` in HTTPS environments). |
+| Why `document.cookie` does not show `sid` | The `HttpOnly` flag explicitly prohibits client-side JavaScript from accessing the cookie, preventing malicious scripts from stealing the session token via XSS. |
+| What happens after an API restart, and why | Subsequent calls to `/v1/me` fail with `401 Unauthorized` (`not logged in`) because session records are stored only in an in-memory `Map` (`SESSIONS`), which is wiped when the process terminates. |
+| What would happen with 3 API servers behind a load balancer | Without sticky sessions or a shared session store (like Redis or a centralized database), incoming requests land on different instances that do not know the in-memory `sid`, leading to sporadic `401 Unauthorized` responses. |
