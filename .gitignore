@@ -1,7 +1,11 @@
-# Dependencies
+# Dependencies & Package Managers
 **/node_modules/
 **/.pnp/
 **/.pnp.js
+**/.npm/
+**/.yarn/cache/
+**/.yarn/unplugged/
+**/.pnpm-store/
 
 # Build Outputs & Bundlers
 **/dist/
@@ -14,13 +18,15 @@
 **/.nuxt/
 **/.turbo/
 
-# Caches & Temporary Files
+# Compilers, Caches & Temporary Files
 **/.cache/
 **/.temp/
 **/.tmp/
 **/*.tsbuildinfo
+**/.eslintcache
+**/.prettiercache
 
-# Logs
+# Diagnostic & Execution Logs
 **/logs/
 **/*.log
 **/npm-debug.log*
@@ -35,9 +41,15 @@
 **/*.local
 !**/.env.example
 
-# Testing & Coverage
+# Test Results & Coverage
 **/coverage/
 **/.nyc_output/
+
+# Local Databases & State
+**/*.sqlite
+**/*.sqlite3
+**/*.db
+**/*.db-journal
 
 # IDE & Editor Files
 **/.vscode/*
@@ -50,7 +62,6 @@
 **/*.sln
 **/*.sw?
 
-# Operating System Metadata
+# OS Metadata
 **/.DS_Store
 **/Thumbs.db
-
