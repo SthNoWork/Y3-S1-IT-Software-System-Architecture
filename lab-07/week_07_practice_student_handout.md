@@ -138,11 +138,11 @@ await conn.close();
 
 ## Before you leave: checklist
 
-- [ ] Orders placed through the API reach both consumers; Part B question 5 answered
-- [ ] Competing consumers demonstrated
-- [ ] Idempotent consumer skips duplicates
-- [ ] Bad message lands in the DLQ
-- [ ] Event flow diagram and ADR-004 in the portfolio
+- [x] Orders placed through the API reach both consumers; Part B question 5 answered
+- [x] Competing consumers demonstrated
+- [x] Idempotent consumer skips duplicates
+- [x] Bad message lands in the DLQ
+- [x] Event flow diagram and ADR-004 in the portfolio
 
 ---
 
@@ -152,35 +152,48 @@ await conn.close();
 
 | Question | Answer |
 | :--- | :--- |
-| Do both consumers receive every order? What is this pattern called? | |
-| Kitchen consumer stopped, 5 orders placed, then restarted: what happened? | |
-| How would this differ if the API called the kitchen directly over HTTP? | |
-| Two kitchen consumers, 10 orders: how were they shared? | |
+| Do both consumers receive every order? What is this pattern called? | Yes, both `kitchen` and `notification` receive every order event because each queue is bound to the `orders` fanout exchange. This is the **publish/subscribe (pub/sub)** pattern. |
+| Kitchen consumer stopped, 5 orders placed, then restarted: what happened? | RabbitMQ buffered all 5 persistent messages in the durable `kitchen` queue while the consumer was down, and delivered all 5 once the kitchen consumer reconnected. |
+| How would this differ if the API called the kitchen directly over HTTP? | Direct HTTP calls would fail (connection refused / timeout) while the kitchen service is down, causing `place()` to fail or drop orders unless the API implemented its own retry/outbox logic. |
+| Two kitchen consumers, 10 orders: how were they shared? | The 10 messages were distributed across the two `kitchen` consumers (one at a time per consumer due to `prefetch(1)`), each processing roughly half (e.g. 5 and 5) — the **competing-consumers** pattern. |
 
 ### Part C — Duplicates and idempotency
 
 | Question | Answer |
 | :--- | :--- |
-| Output when `same-id-1` is published twice (before the fix) | |
-| Output after the fix | |
-| Where should `processed` live in production, and why? | |
+| Output when `same-id-1` is published twice (before the fix) | `[kitchen] got OrderPlaced same-id-1` printed twice (the order is processed twice). |
+| Output after the fix | First delivery: `[kitchen] got OrderPlaced same-id-1`; second delivery: `[kitchen] skip duplicate same-id-1`. |
+| Where should `processed` live in production, and why? | In a persistent database table (e.g. `processed_events` with a unique constraint on `eventId`), because an in-memory `Set` is lost on worker restart and is not shared across multiple competing consumer instances. |
 
 ### Part D — Dead-letter queue
 
 | Question | Answer |
 | :--- | :--- |
-| Did the bad message reach `kitchen.dlq`? (check the management UI) | |
-| Why is requeueing a message that always fails dangerous? | |
+| Did the bad message reach `kitchen.dlq`? (check the management UI) | Yes — rejecting the empty-items event with `ch.nack(msg, false, false)` routes it via `orders.dlx` into `kitchen.dlq` (and `notification.dlq`). |
+| Why is requeueing a message that always fails dangerous? | Requeueing (`ch.nack(msg, false, true)`) puts the poison message right back onto the main queue, creating an infinite retry loop that wastes CPU/logs and blocks healthy messages behind it. |
 
 ### Part E — Event flow and ADR-004
 
 Draw the event flow (who publishes and who consumes each event) here or attach it:
 
-<br><br><br><br><br><br><br><br>
+```mermaid
+flowchart LR
+  Ordering["Ordering"] -->|OrderPlaced| Kitchen["Kitchen"]
+  Ordering -->|OrderPlaced| Notification["Notification"]
+  Ordering -->|OrderPlaced| Payment["Payment"]
+  Payment -->|PaymentAuthorised| Ordering
+  Payment -->|PaymentAuthorised| Kitchen
+  Kitchen -->|OrderAccepted| Notification
+  Kitchen -->|OrderAccepted| Dispatch["Dispatch / Riders"]
+  Dispatch -->|RiderAssigned| Notification
+  Dispatch -->|RiderAssigned| Ordering
+  Dispatch -->|OrderDelivered| Ordering
+  Dispatch -->|OrderDelivered| Notification
+```
 
 | ADR-004 | Your text |
 | :--- | :--- |
-| **Title** | |
-| **Context** | |
-| **Decision** | |
-| **Consequences** | |
+| **Title** | ADR-004: Asynchronous Messaging with RabbitMQ for FoodHub Order Pipeline |
+| **Context** | Placing an order in FoodHub previously coupled order persistence with downstream kitchen, payment, dispatch, and notification work. Synchronous HTTP calls cause cascading failures when downstream services are slow or offline, and duplicate deliveries or malformed payloads must not corrupt state. Meanwhile, FoodHub also has high-frequency rider GPS updates that have different ordering and retention needs from order lifecycle events. |
+| **Decision** | Adopt **RabbitMQ** (with durable exchanges/queues, persistent messages, dead-letter exchanges, and consumer-side idempotency) for order lifecycle events (`OrderPlaced`, `PaymentAuthorised`, `OrderAccepted`, `RiderAssigned`, `OrderDelivered`). Use **at-least-once delivery** with a `processed_events` database table keyed by `eventId` to achieve idempotent processing. Do not use RabbitMQ for high-volume rider GPS telemetry (use ephemeral/latest-state storage or a partitioned stream if needed later). |
+| **Consequences** | **Ordering:** RabbitMQ queues preserve FIFO order only for a single consumer, not across competing consumers; order state transitions must tolerate or guard against out-of-order events, while rider GPS updates only need latest-position semantics per rider. **Retention:** RabbitMQ deletes messages once acknowledged, so long-term event replay or audit logs are not retained in the broker (unlike Kafka); a database outbox/event log is needed if replay is required. **Delivery guarantee:** At-least-once delivery prevents lost orders during consumer restarts, at the cost of requiring idempotent consumers and DLQ monitoring (`*.dlq`) for poison messages. |
